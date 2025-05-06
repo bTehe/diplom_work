@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-sm">
+    <div class="card-header bg-warning text-dark">
+      <h3 class="mb-0">
+        <i class="bi bi-bar-chart-line-fill me-2"></i>Monitoring &amp; Alerts
+      </h3>
+    </div>
+    <div class="card-body">
+
+      {# Flash messages #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-4">
+            {% for category, message in messages %}
+              <div class="alert alert-{{
+                'success' if category=='success' else
+                'info'    if category=='info'    else
+                'warning' if category=='warning' else
+                'danger'
+              }} mb-3" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {# Filtering Form #}
+      <form method="post" class="row gx-4 gy-4 mb-4">
+        <div class="col-md-4">
+          <label for="incident_file" class="form-label">Вибір файлу інцидентів</label>
+          <select name="incident_file" id="incident_file" class="form-control" required>
+            <option value="">— Оберіть файл —</option>
+            {% for f in files %}
+              <option value="{{ f }}" {% if selected.file == f %}selected{% endif %}>{{ f }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="pred_class" class="form-label">Код класу (optional)</label>
+          <input type="number" name="pred_class" id="pred_class" class="form-control" min="0" value="{{ selected.pred_class or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label for="min_confidence" class="form-label">Min Confidence</label>
+          <input type="number" step="0.01" min="0" max="1" name="min_confidence" id="min_confidence" class="form-control" value="{{ selected.min_conf }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end justify-content-end">
+          <button type="submit" class="btn btn-warning px-4">
+            <i class="bi bi-funnel-fill me-2"></i>Фільтрувати
+          </button>
+        </div>
+      </form>
+
+      {% if table_html %}
+        <hr class="my-4">
+        <h5 class="mb-3">
+          <i class="bi bi-exclamation-circle me-2 text-danger"></i>Відфільтровані інциденти
+        </h5>
+        <div class="table-responsive shadow-sm">
+          {{ table_html|safe }}
+        </div>
+      {% else %}
+        <div class="text-center text-muted">
+          <p>Оберіть файл і фільтри, щоб побачити інциденти.</p>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

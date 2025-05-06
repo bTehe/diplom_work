@@ -1,0 +1,75 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4">🛡️ Система виявлення кібер-атак</h1>
+  <p class="lead">
+    Оперативний моніторинг і аналітика на основі глибинного навчання.
+  </p>
+
+  <div class="row">
+    <!-- Карта 1 -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">🗂 Завантажені файли</h5>
+          <p class="card-text display-4">{{ stats.raw_files }}</p>
+          <small class="text-muted">очікують обробки</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Карта 2 -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">⚙️ Оброблені дані</h5>
+          <p class="card-text display-4">{{ stats.processed_files }}</p>
+          <small class="text-muted">готові до тренування</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Карта 3 -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">🤖 Навчені моделі</h5>
+          <p class="card-text display-4">{{ stats.models }}</p>
+          <small class="text-muted">доступні для inference</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Карта 4 -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">📊 Запуски inference</h5>
+          <p class="card-text display-4">{{ stats.inference_runs }}</p>
+          <small class="text-muted">результати в історії</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Карта 5 -->
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">📝 Звіти</h5>
+          <p class="card-text display-4">{{ stats.reports }}</p>
+          <small class="text-muted">CSV & PDF</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4" />
+
+  <div class="alert alert-info">
+    <strong>Порада:</strong> перейдіть до розділу
+    <a href="{{ url_for('data_ingest.upload') }}">Завантаження даних</a>, щоб
+    додати нові файли, або до
+    <a href="{{ url_for('training.train') }}">Training</a>, щоб натренувати
+    модель на оброблених даних.
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">
+      <h3 class="mb-0">🧹 Preprocessing &amp; EDA</h3>
+    </div>
+    <div class="card-body">
+      {# Flash messages #} {% with messages =
+      get_flashed_messages(with_categories=true) %} {% if messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{
+                  'success' if category=='success' else
+                  'warning' if category=='warning' else
+                  'danger'
+                }}"
+          role="alert"
+        >
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %} {# Form #}
+      <form method="post" class="row gx-4 gy-4 mb-4">
+        <div class="col-md-8">
+          <label for="filename" class="form-label">Оберіть raw CSV файл</label>
+          <select name="filename" id="filename" class="form-control" required>
+            <option value="">— Обрати файл —</option>
+            {% for f in files %}
+            <option value="{{ f }}">{{ f }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end justify-content-end">
+          <button type="submit" class="btn btn-secondary px-4">
+            <i class="bi bi-funnel-fill me-2"></i>Запустити обробку
+          </button>
+        </div>
+      </form>
+
+      {% if summary %}
+      <hr class="my-4" />
+      <div class="row gy-4">
+        <div class="col-md-6">
+          <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Початкові рядки:</strong>
+              <span>{{ summary.initial_rows }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Рядки після чистки:</strong>
+              <span>{{ summary.after_clean_rows }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Пропусків до:</strong>
+              <span>{{ summary.missing_before }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between">
+              <strong>Негативних до:</strong>
+              <span>{{ summary.negatives_before }}</span>
+            </li>
+            <li class="list-group-item">
+              <strong>Збережено файл:</strong>
+              <span class="text-truncate d-block"
+                >{{ summary.processed_path }}</span
+              >
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-3">Preview перших 5 рядків</h5>
+          <div class="table-responsive">{{ summary.preview|safe }}</div>
+          {% if summary.distribution %}
+          <h5 class="mt-4 mb-3">Розподіл міток</h5>
+          <div class="table-responsive">{{ summary.distribution|safe }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
