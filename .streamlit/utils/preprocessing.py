@@ -385,8 +385,12 @@ def preprocess_files_combined(
     raw_dir: str | os.PathLike,
     processed_dir: str | os.PathLike,
 ) -> list[PreprocessSummary]:
+    """Preprocess several CSV files as one combined dataset."""
     try:
-        summaries = []
+        summaries: list[PreprocessSummary] = []
+        dfs: list[pd.DataFrame] = []
+
+        # ── 1. read all files and collect meta-info
         for filename in filenames:
             logger.info(f"Початок обробки файлу {filename}")
             path = Path(raw_dir) / filename
@@ -396,9 +400,8 @@ def preprocess_files_combined(
             df_raw = pd.read_csv(path)
             df_raw.columns = df_raw.columns.str.strip()
             df_raw['Label'] = df_raw['Label'].str.replace('-', '–', regex=False)
-            df_raw['Day'] = path.stem            # потрібно для DATE_MAP
-        
-            # мета-інфо для шаблону
+            df_raw['Day'] = path.stem  # потрібно для DATE_MAP
+
             initial_rows = len(df_raw)
             missing_before = int(df_raw.isna().sum().sum())
             numeric_cols = df_raw.select_dtypes(include=[np.number]).columns
@@ -408,62 +411,61 @@ def preprocess_files_combined(
                 PreprocessSummary(
                     filename=filename,
                     initial_rows=initial_rows,
-                    after_clean_rows=0,        # тимчасово – оновимо пізніше
+                    after_clean_rows=0,  # заповнимо пізніше
                     missing_before=missing_before,
                     negatives_before=negatives_before,
-                    processed_path="",        # ← заповнимо після save
-                    df_head="",              # ← заповнимо після обробки
+                    processed_path="",  # ← заповнимо після save
+                    df_head="",          # ← заповнимо після обробки
                 )
             )
 
-            df = _add_datetime_index(df_raw)
-            df = _engineer_time_features(df)
-            df = _clean_data(df)
+            dfs.append(df_raw)
 
-            # оновлюємо «після чистки» для кожного summary
-            clean_len = len(df)
-            for s in summaries:
-                if s.filename == filename:
-                    s.after_clean_rows = clean_len      # усі файли → однакове число
+        if not dfs:
+            return []
 
-            df = _apply_transformers(df)
-            df = _bin_features(df)
-            df = _map_labels(df)
-            df = _add_time_feature(df)
-            df['composite'] = df['label_code'] * 168 + df['time']
-            df_final = _drop_and_select(df)
+        # ── 2. combine all dataframes
+        df_all = pd.concat(dfs, ignore_index=True)
 
-            # Зберігаємо head для відображення
-            df_head_html = df_final.head().to_html(classes="table table-sm", index=False)
-            for s in summaries:
-                if s.filename == filename:
-                    s.df_head = df_head_html
+        df = _add_datetime_index(df_all)
+        df = _engineer_time_features(df)
+        df = _clean_data(df)
 
-            # ── 2.  train / val / test + SMOTE
-            splits = _split_and_balance(df_final)
+        clean_len = len(df)
+        for s in summaries:
+            s.after_clean_rows = clean_len
 
-            train = splits['X_train_bal'].copy()
-            train['label_code'] = splits['y_train_bal']
-            val   = splits['X_val'].copy()
-            val['label_code'] = splits['y_val']
-            test  = splits['X_test'].copy()
-            test['label_code'] = splits['y_test']
+        df = _apply_transformers(df)
+        df = _bin_features(df)
+        df = _map_labels(df)
+        df = _add_time_feature(df)
+        df['composite'] = df['label_code'] * 168 + df['time']
+        df_final = _drop_and_select(df)
 
-            # stem типу  "Monday+Thursday-Afternoon"
-            combo_stem = "+".join(Path(f).stem for f in filenames)
-            for name, frame in [('train', train), ('val', val), ('test', test)]:
-                if isinstance(frame, pd.Series):
-                    frame = frame.to_frame(name='label_code')
-                out_path = Path(processed_dir) / f"{combo_stem}_{name}.csv"
-                frame.to_csv(out_path, index=False)
-                print(f"Saved {name:<5} → {out_path}")
+        df_head_html = df_final.head().to_html(classes="table table-sm", index=False)
+        for s in summaries:
+            s.df_head = df_head_html
+            s.processed_path = str(Path(processed_dir).resolve())
 
-            # ── 3.  заповнюємо processed_path для відображення
-            for s in summaries:
-                if s.filename == filename:
-                    s.processed_path = str(Path(processed_dir).resolve())
+        # ── 3. train / val / test + SMOTE on combined dataset
+        splits = _split_and_balance(df_final)
 
-            logger.info(f"Файл {filename} успішно оброблено")
+        train = splits['X_train_bal'].copy()
+        train['label_code'] = splits['y_train_bal']
+        val = splits['X_val'].copy()
+        val['label_code'] = splits['y_val']
+        test = splits['X_test'].copy()
+        test['label_code'] = splits['y_test']
+
+        combo_stem = "+".join(Path(f).stem for f in filenames)
+        for name, frame in [('train', train), ('val', val), ('test', test)]:
+            if isinstance(frame, pd.Series):
+                frame = frame.to_frame(name='label_code')
+            out_path = Path(processed_dir) / f"{combo_stem}_{name}.csv"
+            frame.to_csv(out_path, index=False)
+            print(f"Saved {name:<5} → {out_path}")
+
+        logger.info(f"Успішно оброблено {len(filenames)} файлів у комбінації {combo_stem}")
         return summaries
     except Exception as e:
         logger.error(f"Помилка при обробці файлів: {str(e)}")
