@@ -1,11 +1,10 @@
 /Dataset
-/Filtered datasets
-/NN Datasets
-venv/
-__pycache__/
-ui-app/*.pyc
-ui-app/instance/*.py
-ui-app/data/raw/*
-ui-app/data/processed/*
-ui-app/models/*.*
-ui-app/logs/*
+/photos
+/NN Development/Dataset
+/NN Development/Filtered datasets
+/NN Development/NN Datasets
+/.streamlit/logs
+/.streamlit/utils/data
+/.streamlit/utils/models
+/.streamlit/utils/reports
+/.streamlit/utils/temp

@@ -1,0 +1,5 @@
+[server]
+maxUploadSize = 3072
+
+[client]
+showSidebarNavigation = false
